@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>EchoGarden – vAPP PoC</title>
+  <!-- Tailwind Play CDN (no build) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes drop {
+      0% { transform: translateY(-10px) scale(1); opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(110vh) scale(0.9); opacity: 0; }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-white overflow-x-hidden"
+      style="background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(139,92,246,.35), transparent),
+        radial-gradient(1200px 600px at 90% 10%, rgba(34,211,238,.35), transparent),
+        linear-gradient(120deg,#0a0a0a,#0f0b1e 40%,#0b132b 100%);">
+
+  <!-- Confetti container -->
+  <div id="confetti" class="pointer-events-none fixed inset-0 overflow-hidden"></div>
+
+  <!-- NAV -->
+  <nav class="max-w-6xl mx-auto px-4 py-5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full border border-fuchsia-400/60 flex items-center justify-center">
+        🌱
+      </div>
+      <div>
+        <div class="text-xl font-bold tracking-tight">EchoGarden</div>
+        <div class="text-xs opacity-70 -mt-1">Grow points from your noise</div>
+      </div>
+    </div>
+    <div class="hidden md:flex items-center gap-2">
+      <span class="px-3 py-1 rounded-full text-xs font-medium bg-white/10 backdrop-blur border border-white/20">🌱 vAPP PoC</span>
+      <span class="px-3 py-1 rounded-full text-xs font-medium bg-white/10 backdrop-blur border border-white/20">🧪 Testnet</span>
+      <span class="px-3 py-1 rounded-full text-xs font-medium bg-white/10 backdrop-blur border border-white/20">🎛️ Attention Mining</span>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="max-w-6xl mx-auto px-4 pt-8 pb-6 md:pt-14 md:pb-10">
+    <div class="grid md:grid-cols-2 gap-8 items-center">
+      <div>
+        <h1 class="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+          Turn your <span class="bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 via-pink-400 to-cyan-300">tweets, swaps, stakes & clicks</span> into points — using your Discord Dev Key (not a wallet).
+        </h1>
+        <p class="mt-4 text-base md:text-lg opacity-90">
+          Plant a seed (enter Dev Key), let the garden listen, and watch your XP sprout 🌱. Front-end PoC only.
+        </p>
+
+        <div class="mt-5 flex flex-col sm:flex-row gap-3">
+          <input id="devKey" placeholder="DevKey_YourDiscordToken"
+                 class="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/15 focus:outline-none focus:ring-2 focus:ring-fuchsia-500"/>
+          <button id="plantBtn"
+                  class="px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-fuchsia-500 via-pink-500 to-cyan-400 hover:opacity-90 active:opacity-80 shadow-lg">
+            Plant Seed
+          </button>
+        </div>
+
+        <div id="statusLine" class="mt-4 text-sm opacity-80">
+          Enter your Dev Key from Discord to start. (This is the test developer key used by our bot — not a wallet.)
+        </div>
+
+        <div class="mt-6 flex items-center gap-4">
+          <div id="xp" class="text-5xl md:text-6xl font-extrabold tracking-tight">0</div>
+          <div class="opacity-80">
+            <div class="text-sm uppercase tracking-widest">XP</div>
+            <div class="text-xs">multiplier x<span id="mult">1.0</span></div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="#docs" class="px-4 py-2 rounded-lg bg-white/10 border border-white/15 hover:bg-white/15">View Docs</a>
+          <a href="#cli" class="px-4 py-2 rounded-lg bg-white/10 border border-white/15 hover:bg-white/15">Try CLI</a>
+          <a href="#verify" class="px-4 py-2 rounded-lg bg-white/10 border border-white/15 hover:bg-white/15">Open Verifier Panel</a>
+        </div>
+      </div>
+
+      <!-- Stats card -->
+      <div class="relative">
+        <div class="absolute -inset-6 bg-gradient-to-tr from-fuchsia-600/30 via-pink-500/20 to-cyan-400/30 blur-3xl rounded-[2rem]"></div>
+        <div class="relative rounded-3xl p-6 bg-white/5 border border-white/10">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full border border-pink-300/60 flex items-center justify-center">🎧</div>
+            <div>
+              <div class="font-semibold">Live Garden Stats</div>
+              <div class="text-xs opacity-80">Simulated demo</div>
+            </div>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+            <div class="rounded-xl p-4 bg-white/5 border border-white/10">
+              <div class="opacity-70">Active Seeds</div>
+              <div id="activeSeeds" class="text-2xl font-bold">1</div>
+            </div>
+            <div class="rounded-xl p-4 bg-white/5 border border-white/10">
+              <div class="opacity-70">Garden Health</div>
+              <div id="gardenHealth" class="text-2xl font-bold">40%</div>
+            </div>
+            <div class="rounded-xl p-4 bg-white/5 border border-white/10 col-span-2">
+              <div class="opacity-70">Latest Sprout</div>
+              <div id="latestSprout" class="font-mono text-xs md:text-sm break-all">Seed-0x…-0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Features -->
+  <section id="docs" class="max-w-6xl mx-auto px-4 pb-12">
+    <div class="grid md:grid-cols-3 gap-5">
+      <div class="rounded-2xl p-5 md:p-6 bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <div class="flex items-center gap-3 mb-2"><div class="text-2xl">📡</div><h3 class="text-lg md:text-xl font-semibold">Signal → XP</h3></div>
+        <div class="text-sm md:text-base opacity-90 leading-relaxed">We capture lightweight public signals (tweet, swap, stake, click) and map them to XP buckets.</div>
+      </div>
+      <div class="rounded-2xl p-5 md:p-6 bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <div class="flex items-center gap-3 mb-2"><div class="text-2xl">🌈</div><h3 class="text-lg md:text-xl font-semibold">Cute Multiplier</h3></div>
+        <div class="text-sm md:text-base opacity-90 leading-relaxed">Consistency grows your multiplier. Streaks, quests, partner routes add boosts.</div>
+      </div>
+      <div class="rounded-2xl p-5 md:p-6 bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <div class="flex items-center gap-3 mb-2"><div class="text-2xl">🛡️</div><h3 class="text-lg md:text-xl font-semibold">Anti-farm Guard</h3></div>
+        <div class="text-sm md:text-base opacity-90 leading-relaxed">Heuristics + cooldown windows keep the garden healthy. Rules are transparent.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLI -->
+  <section id="cli" class="max-w-6xl mx-auto px-4 pb-16">
+    <div class="rounded-2xl p-6 bg-black/40 border border-white/10">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl md:text-2xl font-semibold">CLI: soundness-eg</h2>
+        <button id="copyInstall"
+                class="text-xs px-3 py-1 rounded-lg bg-white/10 border border-white/15">Copy Install</button>
+      </div>
+      <pre id="installSnippet"
+           class="mt-4 text-xs md:text-sm overflow-x-auto p-4 rounded-xl bg-black/60 border border-white/10"></pre>
+      <p class="text-xs opacity-70">Note: demo only, replace with your real CLI / repo links.</p>
+    </div>
+  </section>
+
+  <!-- Verifier Panel -->
+  <section id="verify" class="max-w-6xl mx-auto px-4 pb-24">
+    <div class="rounded-2xl p-6 bg-white/5 border border-white/10">
+      <h2 class="text-xl md:text-2xl font-semibold">Verifier Panel — 2 Steps</h2>
+      <ol class="list-decimal ml-6 mt-3 space-y-2 text-sm opacity-90">
+        <li>From your <b>Game Complete</b> screen, copy <b>Walrus Blob ID</b> → paste to Step 1.</li>
+        <li>After running <code>soundness-cli send ...</code> in VPS/CLI, paste stdout to Step 2 and press <b>Parse Output</b>.</li>
+      </ol>
+
+      <!-- Step 1 -->
+      <div class="mt-5">
+        <h3 class="font-semibold mb-2">Step 1 — Game Success (Blob)</h3>
+        <div class="flex gap-2 items-center">
+          <input id="blobId" placeholder="eXG1dW... (Walrus Blob ID)"
+                 class="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/15"/>
+          <button id="copyBlob" class="px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-xs">Copy</button>
+        </div>
+        <div id="blobSet" class="mt-2 text-xs opacity-80 hidden"></div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="mt-6">
+        <h3 class="font-semibold mb-2">Step 2 — Paste CLI Output</h3>
+        <textarea id="cliOut" rows="8" placeholder="Paste full soundness-cli output here"
+                  class="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 font-mono text-xs"></textarea>
+        <div class="mt-2 flex gap-2">
+          <button id="parseBtn" class="px-4 py-2 rounded-lg bg-gradient-to-r from-fuchsia-500 via-pink-500 to-cyan-400 font-semibold">Parse Output</button>
+          <button id="copyRaw" class="px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-xs">Copy Raw</button>
+        </div>
+        <div id="parsedGrid" class="mt-4 grid md:grid-cols-2 gap-4 text-sm hidden">
+          <div class="rounded-xl p-4 bg-white/5 border border-white/10">
+            <div class="opacity-70">Status</div>
+            <div id="pStatus" class="text-lg font-bold">—</div>
+          </div>
+          <div class="rounded-xl p-4 bg-white/5 border border-white/10">
+            <div class="opacity-70">Tx Digest</div>
+            <div id="pTx" class="font-mono break-all">—</div>
+          </div>
+          <div class="rounded-xl p-4 bg-white/5 border border-white/10">
+            <div class="opacity-70">Proof Blob ID</div>
+            <div id="pBlob" class="font-mono break-all">—</div>
+          </div>
+          <div class="rounded-xl p-4 bg-white/5 border border-white/10">
+            <div class="opacity-70">Walruscan</div>
+            <div id="pWal" class="font-mono break-all">—</div>
+          </div>
+        </div>
+        <div class="mt-3 text-xs opacity-70">*Parsing heuristik; format log CLI bisa bervariasi.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="px-4 py-10 text-center text-xs opacity-70"
+          style="background: radial-gradient(600px 200px at 50% -20%, rgba(236,72,153,.2), transparent);">
+    <div class="max-w-6xl mx-auto">Built with ❤ for Soundness • EchoGarden vAPP PoC</div>
+  </footer>
+
+<script>
+  // ===== Helpers (no framework) =====
+  const el = id => document.getElementById(id);
+  const maskKey = (x='') => {
+    const s = (x||'').trim();
+    return s.length <= 10 ? s : s.slice(0,6) + '…' + s.slice(-4);
+  };
+  const buildInstallSnippet = key => {
+    const k = key && key.trim() ? key.trim() : 'DEV_KEY';
+    return `# install (demo only)
+curl -sSL https://eg.sh/install | bash
+
+# plant a seed (fake)
+eg plant --key ${k}
+
+# watch XP grow (simulated)
+eg watch --follow
+`;
+  };
+  const copyTextSafely = async (text) => {
+    try {
+      if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(text); return true; }
+    } catch (e) {}
+    try {
+      const ta = document.createElement('textarea'); ta.value = text; ta.readOnly = true;
+      ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy'); document.body.removeChild(ta); if (ok) return true;
+    } catch (e) {}
+    const ask = confirm('Clipboard restricted. Show text to copy manually?');
+    if (ask) prompt('Copy this:', text);
+    return false;
+  };
+  const stripAnsi = t => t.replace(/\u001b\[[0-9;]*m/g,'');
+  const parseCliOutput = txt => {
+    const out = { status:null, txDigest:null, blobId:null, walrusLink:null };
+    if (!txt) return out;
+    const t = stripAnsi(txt);
+    const mS = t.match(/Status:\s*(SUCCESS|FAILED|ERROR)/i); if (mS) out.status = mS[1].toUpperCase();
+    const mT = t.match(/Transaction Digest:\s*([A-Za-z0-9._-]+)/i); if (mT) out.txDigest = mT[1];
+    const mB = t.match(/Proof Blob ID:\s*([A-Za-z0-9._-]+)/i); if (mB) out.blobId = mB[1];
+    const mW = t.match(/https?:\/\/walruscan[^\s]+/i); if (mW) out.walrusLink = mW[0];
+    return out;
+  };
+
+  // ===== App state =====
+  let connected = false, xp = 0, mult = 1.0, keyValue = '';
+
+  // Confetti light
+  setInterval(() => {
+    const c = el('confetti');
+    const n = Math.floor(Math.random()*4);
+    for (let i=0;i<n;i++){
+      const s = document.createElement('span');
+      s.className = 'absolute w-2 h-2 rounded-full bg-white/80';
+      s.style.left = (Math.random()*100)+'%';
+      s.style.top = 0;
+      s.style.animation = `drop ${2 + Math.random()*2}s linear ${Math.random()*300}ms forwards`;
+      c.appendChild(s);
+      setTimeout(()=> s.remove(), 4000);
+    }
+  }, 1200);
+
+  // Bind UI
+  const devKey = el('devKey');
+  const plantBtn = el('plantBtn');
+  const statusLine = el('statusLine');
+  const xpEl = el('xp');
+  const multEl = el('mult');
+  const activeSeeds = el('activeSeeds');
+  const gardenHealth = el('gardenHealth');
+  const latestSprout = el('latestSprout');
+  const installSnippet = el('installSnippet');
+  const copyInstall = el('copyInstall');
+
+  const blobId = el('blobId');
+  const copyBlob = el('copyBlob');
+  const blobSet = el('blobSet');
+
+  const cliOut = el('cliOut');
+  const copyRaw = el('copyRaw');
+  const parseBtn = el('parseBtn');
+  const parsedGrid = el('parsedGrid');
+  const pStatus = el('pStatus');
+  const pTx = el('pTx');
+  const pBlob = el('pBlob');
+  const pWal = el('pWal');
+
+  const refreshInstallSnippet = () => {
+    installSnippet.textContent = buildInstallSnippet(keyValue);
+  };
+  refreshInstallSnippet();
+
+  devKey.addEventListener('input', () => {
+    keyValue = devKey.value;
+    refreshInstallSnippet();
+  });
+
+  plantBtn.addEventListener('click', () => {
+    if (!keyValue) {
+      alert('Enter your Dev Key to plant a seed 🌱\n(From our Discord bot — not a wallet.)');
+      return;
+    }
+    connected = true;
+    statusLine.innerHTML = `Listening with Dev Key <span class="font-mono">${maskKey(keyValue)}</span>… gaining XP ✨`;
+    plantBtn.textContent = 'Seed Planted ✅';
+  });
+
+  // XP ticker
+  setInterval(() => {
+    if (!connected) return;
+    const inc = Math.floor(1 + Math.random()*mult);
+    xp += inc;
+    if (Math.random() > 0.7) mult = Math.min(10, +(mult + 0.2).toFixed(1));
+    xpEl.textContent = xp.toLocaleString();
+    multEl.textContent = mult.toFixed(1);
+    activeSeeds.textContent = Math.max(1, Math.floor(xp/17)).toLocaleString();
+    gardenHealth.textContent = Math.min(100, 40 + Math.floor(xp % 60)) + '%';
+    latestSprout.textContent = `Seed-${maskKey(keyValue||'0x…')}-${xp}`;
+  }, 700);
+
+  // Copy buttons
+  copyInstall.addEventListener('click', async () => {
+    await copyTextSafely(installSnippet.textContent);
+  });
+  copyBlob.addEventListener('click', async () => {
+    if (!blobId.value) return;
+    await copyTextSafely(blobId.value);
+  });
+  copyRaw.addEventListener('click', async () => {
+    if (!cliOut.value) return;
+    await copyTextSafely(cliOut.value);
+  });
+
+  // Parse CLI output
+  parseBtn.addEventListener('click', () => {
+    const res = parseCliOutput(cliOut.value || '');
+    parsedGrid.classList.remove('hidden');
+    pStatus.textContent = res.status || '—';
+    pTx.textContent = res.txDigest || '—';
+    const finalBlob = res.blobId || (blobId.value || '');
+    pBlob.textContent = finalBlob || '—';
+    pWal.textContent = res.walrusLink || '—';
+    if (blobId.value) {
+      blobSet.classList.remove('hidden');
+      blobSet.innerHTML = `Blob set: <span class="font-mono">${blobId.value}</span>`;
+    }
+  });
+</script>
+</body>
+</html>
